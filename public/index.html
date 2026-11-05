@@ -36,6 +36,9 @@ h2,h4{font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;f
 .search input::placeholder{color:var(--ink-muted);font-weight:500}
 .results{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);max-height:60vh;overflow:auto;padding:6px;z-index:30}
 .res{display:grid;grid-template-columns:1fr auto;gap:2px 12px;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:8px 10px}
+.resrow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;border-radius:10px;padding-right:6px}
+.resrow:hover{background:var(--surface-2)}.resrow .res{flex:1 1 160px;min-width:0;grid-template-columns:1fr}
+.resrow .tg-chip{flex:none;margin:0 0 6px 10px;align-self:flex-start;margin-top:8px}
 .res:hover{background:var(--surface-2)}.res span{color:var(--ink-muted);font-size:.8rem}
 .chips{flex:none;display:flex;gap:8px;padding:8px 16px;overflow-x:auto;background:var(--bg);border-bottom:1px solid var(--border);z-index:19;scrollbar-width:thin}
 .chip{flex:none;border:1.5px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 14px;font:700 .78rem var(--body);min-height:36px}
@@ -268,7 +271,7 @@ var BR=[
 {n:"Варшава",f:"🇵🇱",p:[["Баршівський Андрій","COO","@a_barshivskyi"],["Кравченко Владислава","Sales Manager","@vladisslava_kr_ybc"],["Квасюк Юлія","Event Manager","@ykvasyuk"],["Стьоба Олена","Business Manager","@businessmanagerYBC"],["Стратійчук Юлія","Business Manager","@julia_stratiichuk"],["Сібілєва Марина","SMM","@hharise"]]},
 {n:"Вроцлав",f:"🇵🇱",p:[["Чічкань Максим","CEO","@Maks_YBC"],["Нечипуренко Тетяна","Business Manager","@Tetiana_Nech_YBC"],["Олеся Скалозуб","Business Manager","@Olesia_YBC"],["Олена Кравчук","SMM","@Olenka_Krav"]]},
 {n:"Лісабон",f:"🇵🇹",p:[["Воробйова Іріна","CEO","@IrinaVorobiova"],["Вікторія Пона","Комʼюніті менеджер","@victoriapona"]]},
-{n:"Онлайн",f:"",note:"Онлайн-філія для міст, де немає фізичного клубу.",p:[["Самородова Діана","Head of BM Online","@diana_yurkevich"],["Семілєтова Евеліна","Business Manager","@evelinasem"],["Єремеєва Катерина","Business Manager","@Katyaeremeevaaa"]]}
+{n:"Онлайн",f:"",note:"Онлайн-філія для міст, де немає фізичного клубу.",p:[["Самородова Діана","Head of BM Online","@diana_yurkevich"],["Семілєтова Евеліна","Business Manager","@evelinasem"],["Єремеєва Катерина","Business Manager","@Katyaeremeevaaa"],["Тіт Юлія","Бізнес-менеджер резидентів",""]]}
 ];
 var FR=[
 {n:"Кіпр",p:[["Польчин Олег","Partner","@ceo_seagate"],["Діана Аракелян","CEO","@ArakelyanDi"],["Копко Наталія","Event Manager","@nk_nknk"],["Запасна Катерина","Business Manager","@katez1909"]]},
@@ -497,19 +500,22 @@ function score(p,toks){var nw=words(p.name),aw=words(p.name+" "+p.pos+" "+p.wher
     else if(full.indexOf(q)>-1)s+=1;
     else return 0}
   return s}
-$("#q").addEventListener("input",function(){var v=this.value.trim().toLowerCase(),box=$("#res");
+function runSearch(){var v=$("#q").value.trim().toLowerCase(),box=$("#res");
   if(!v){box.hidden=true;return}
   var toks=v.split(/\s+/);
   var pm=PIDX.map(function(p){return{p:p,s:score(p,toks)}}).filter(function(x){return x.s>0}).sort(function(a,b){return b.s-a.s||a.p.name.localeCompare(b.p.name,"uk")}).slice(0,8).map(function(x){return x.p});
   var nm2=v.length<2?[]:NODES.filter(function(n){return!n.ghost&&n.k!=="root"&&!n.grp&&(n.t+" "+(EN[n.t]||"")+" "+n.s).toLowerCase().indexOf(v)>-1}).slice(0,4);
   box.innerHTML=(pm.length||nm2.length)?
-    pm.map(function(p,i){return'<button class="res" data-p="'+i+'"><b>'+esc(p.name)+'</b><span>'+esc(p.pos)+' · '+esc(p.dep||p.where)+'</span><span class="h">'+esc(p.handle||"")+'</span></button>'}).join("")+
+    pm.map(function(p,i){return'<div class="resrow"><button class="res" data-p="'+i+'"><b>'+esc(p.name)+'</b><span>'+esc(p.pos)+' · '+esc(p.dep||p.where)+'</span></button>'+(p.handle?'<span class="tg-chip"><span class="tg-t">'+esc(p.handle)+'</span><button class="copy" type="button" data-copy="'+esc(p.handle)+'" aria-label="Копіювати нік '+esc(p.handle)+'" title="Копіювати">'+COPY_SVG+'</button></span>':'')+'</div>'}).join("")+
     nm2.map(function(n,i){return'<button class="res" data-n="'+i+'"><b>'+esc(n.t)+'</b><span>'+esc(n.k==="fn"?(n.org?(n.fr?"Франшиза":"Філія"):"Відділ"):"Посада")+' · '+esc(n.s)+'</span></button>'}).join("")
     :'<div class="vacl" style="padding:10px">Нічого не знайдено</div>';
   box.hidden=false;
   box.onclick=function(e){var b=e.target.closest(".res");if(!b)return;box.hidden=true;
     if(b.dataset.p!==undefined)return openPerson(pm[+b.dataset.p]);
-    var n=nm2[+b.dataset.n];openUp(n);render();n.el.classList.add("hit");fly(n,false)}});
+    var n=nm2[+b.dataset.n];openUp(n);render();n.el.classList.add("hit");fly(n,false)}}
+$("#q").addEventListener("input",runSearch);
+$("#q").addEventListener("focus",runSearch);
+$("#q").addEventListener("click",runSearch);
 document.addEventListener("click",function(e){if(!e.target.closest(".search"))$("#res").hidden=true});
 /* ---------- drawer ---------- */
 var stack=[];function go(fn){stack.push(fn);fn()}
@@ -547,7 +553,7 @@ function groupBoss(title,b){
   if(/^(Partner|Акціонер|Співвласник)/.test(title))return"";
   function owners(){return[who(/^Partner/,"Partner"),who(/^Акціонер/,"Акціонер")].filter(Boolean).join(", ")}
   if(/^(CEO|COO)/.test(title))return owners();
-  if(title==="Chief of BM")return"Андрій Остапчук (Управляючий партнер)";
+  if(title==="Chief of BM"||title==="Бізнес-менеджер резидентів")return"Андрій Остапчук (Управляючий партнер)";
   if(/Business Manager|^BM/.test(title)){var c=who(/^Chief of BM/,"Chief of BM");if(c)return c;var h=who(/^Head of BM/,"Head of BM Online");if(h)return h}
   return who(/^CEO/,"CEO")||who(/^COO/,"COO")||owners()||(b.fr?"":"CEO локації")}
 function personCard(p){
